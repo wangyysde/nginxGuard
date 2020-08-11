@@ -1,0 +1,68 @@
+#!/bin/sh
+
+NGX_SOURCE_DIR=
+help=no
+SRC_DIR=
+
+function cp_files()
+{
+    for file in `ls -D ${1}`
+    do
+	if [ -d "${1}/${file}" ]; then
+	     newpath="${1}/${file}"
+             cp_files ${newpath}
+         fi
+       
+         if [ -f "${1}/${file}" ]; then
+             newpath="${NGX_SOURCE_DIR}/${1}"
+             if [ ! -d ${newpath} ]; then 
+		mkdir -p ${newpath}
+             fi
+             /bin/cp -f "${1}/${file}" "${newpath}/${file}"
+         fi
+    done 
+}
+ 
+
+for option
+do
+    case "$option" in
+        -*=*) value=`echo "$option" | sed -e 's/[-_a-zA-Z0-9]*=//'` ;;
+           *) value="" ;;
+     esac
+
+     case "$option" in
+	--help)                          help=yes                   ;;
+        --ngx_src=*)                     NGX_SOURCE_DIR="$value"        ;;
+	*)
+            echo "$0: error: invalid option \"$option\""
+            exit 1
+     esac
+done
+
+if [ -z ${NGX_SOURCE_DIR} ]
+then
+   help=yes
+fi
+
+if [ $help = yes ]; then
+ 
+cat << END  
+  --help                              print this message
+
+  --ngx_src=PATH                      Path of nginx resource
+
+END
+   exit -1
+fi
+
+SRC_DIR=$(cd `dirname $0`; pwd)
+if [ ! -d ../src ]; then 
+   echo "No resource!"
+   exit -1
+fi
+
+cd ../src
+cp_files "."
+
+

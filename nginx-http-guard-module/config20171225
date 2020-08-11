@@ -1,0 +1,15 @@
+# (C) Wayne Wang	
+# Configuration for ngx_http_guard_module.
+
+ngx_addon_name="ngx_http_guard_module"
+
+HTTP_MODULES="$HTTP_MODULES \
+		ngx_http_guard_module"
+
+#ngx_addon_name="ngx_guard_core_module"
+#CORE_MODULES="$CORE_MODULES  ngx_guard_core_module"
+
+NGX_ADDON_SRCS="$NGX_ADDON_SRCS \
+		$ngx_addon_dir/ngx_http_guard_module.c \
+                $ngx_addon_dir/snmpget/snmpget.c       \
+               "

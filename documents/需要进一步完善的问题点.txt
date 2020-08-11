@@ -1,0 +1,1 @@
+1、ngx_snmp.c文件中ngx_snmp_start_timer函数体内用setitimer所实现的定时器是针对Linux和Unix平台下的，Windows平台下需要另外重写

@@ -1,0 +1,2 @@
+ngx_http_guard_module 
+   -> ngx_http_guard_conn_commands   ->   ngx_http_guard_conn_zone ( guard_conn_zone) 

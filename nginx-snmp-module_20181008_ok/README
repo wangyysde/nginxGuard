@@ -1,0 +1,193 @@
+About
+--------
+
+Nginx snmp is a nginx addon,which can get backend servers' performance data by SNMP,
+and controlling new HTTP requests redirect.If the performance data of a backend server  more(or 
+less) a specified value,then the addon dening a new HTTP request redirected the backend server,
+and log a warning message into error log.If the performance data of all backend servers in a 
+upstream group, then the addon dening all new HTTP requests redirected the backend servers,and 
+redirect the requests to a specified URL(or URI) or sending a response message with specified 
+message to the client(according to the configuration).This addon can prevent the backend servers
+from down in high concurrency.
+
+Install
+---------
+
+cd NGINX_RESOURCE_ROOT
+./configure --prefix=NGINX_INSTALL_ROOT --add-module=ADDON_RESOURCE_ROOT/
+make 
+make install
+
+Configuration
+--------------
+
+Put the following messages into main block of nginx.conf
+#To define a guard main block by snmp directive.For a nginx instance,should be define guard main block ONCE.
+snmp {
+
+   #The interval of getting SNMP data.This directive cat ben placed in snmp block or placed in group directive.
+   #The value of this directive in a group block is as same as one's in the snmp block when there is not the
+   #directive in the group block.
+   interval  60;
+  
+   #A server will be become to down,if there are more than three times error when guard getting SNMP data from the server
+   #Note: A server can accept HTTP request when it's status is down.This directive is for guard,and it is not affect on UPSTREAM
+   # or other HTTP module.Guard will not gett SNMP data from a down server until the server become to OK.
+   fall  3;
+
+   #SNMP port of running on servers
+   port      162;
+
+   #SNMP version of running on servers
+   version   3;
+
+   #To define a SNMP parameters group by group.group_name is group name.This name will be used by snmp_group directive, and in a
+   #main block,the name must be unduplicated.It is possible that there are several group block in a snmp block.
+   group group_name {
+
+        interval  30;
+        fall  3;
+        version   2c;
+        port      161;
+
+        #Community name.
+        community public;
+
+        #To define a item block by item directive.
+        item {
+
+                #To define a object block by object directive.load is object name.This name will be used by express directive, and in a
+                #item block,the name must be unduplicated.It is possible that there are several object block in a item block.
+                object load {
+
+                        #Specifing OID of a SNMP object.Note: this value must be numberic
+                        oid               "1.3.6.1.4.1.2021.10.1.3.1";
+
+                        #The value type of a SNMP object(INT or FLOAT).
+                        type               "FLOAT";
+                }
+
+                #Maximum or minimum value of a item. Guard will consider a item is unhealthy when it's value is MORE(or LESS）than
+                # most value.
+                most               0.5;
+
+                #If the value of this directive is MORE,Guard will consider a item is unhealthy when it's value is MORE than most value.Or,
+                #If the value of this directive is LESS,Guard will consider a item is unhealthy when it's value is LESS than most value.
+                direction          "MORE";
+
+                #The weight of the item.The value of this directive must be a integer.Example,if a item weight is 0.8,then this directive value must be 80.
+                #If guard_mode is and,and there are several items in a group block, guard consider the value of a item
+                # which is unhealthy is 1, then consider 1*weight is the item value.Example: weight1,weight2,weight3...,weightNis the weight of the item1,
+                # item2,item3...,itemN,and they are unhealthy. Then result=1*weight1 + 1*weight2 + 1*weight3+...+1*weightN.If result is more than 1,then
+                # guard will consider the server is unhealthy.Otherwise, the server is healthy.
+                weight             80;
+        }
+
+
+        item {
+               object swap.total.size {
+                      oid                  "1.3.6.1.4.1.2021.4.3.0";
+                      type         "INT";
+               }
+               object swap.free.size {
+                       oid              "1.3.6.1.4.1.2021.4.4.0";
+                       type             "INT";
+               }
+
+               #express directive. swap.ratio is the express' name.last is a function.It's functios is get the last value of a object.
+               #The others function are:
+               #change:get the change of the value of a object.In the other word,the return of the function is (valueN) - (valueN-1).
+               #rate:get the change rate of the value of a object.In the other word, the return of the function is ((valueN)-(valueN-1))/interval
+               #swap.total.size is obect name.
+               express "swap.ratio = (last(swap.total.size) - last(swap.free.size))/last(swap.total.size)*100";
+               most               off;
+               direction          "LESS";
+               weight             10;
+       }
+       item {
+               object mem.free.size {
+                       oid                 "1.3.6.1.4.1.2021.4.6.0";
+                       type               "INT";
+               }
+               object mem.buffered.size {
+                       oid              "1.3.6.1.4.1.2021.4.14.0";
+                       type               "INT";
+               }
+               object mem.cached.size {
+                       oid              "1.3.6.1.4.1.2021.4.15.0";
+                       type               "INT";
+               }
+               ####
+               #express caculate ref from: https://github.com/codeplea/tinyexpr
+               ####
+               #Ref: http://tengine.taobao.org/document/http_sysguard.html
+               express "mem.free = mem.free.size + mem.buffered.size + mem.cached.size";
+               #M: 1024*1024 m: 1000*1000
+               most               on;
+               direction          "MORE";
+               weight              10;
+       }
+
+      item {
+               object if.InOctet{
+                       oid              "1.3.6.1.2.1.2.2.1.10.1";
+                       type               "INT";
+               }
+               object if.OutOctet{
+                       oid           "1.3.6.1.2.1.2.2.1.16.1";
+                       type               "INT";
+               }
+               #interval is collection interval
+               express "if.speed = ((change(if.InOctet) + change(if.OutOctet))/interval";
+               most               95M;
+               direction          "LESS";
+               weight              5;
+       }
+
+    }
+}
+
+
+Put the following messages into location block
+#Specifing which upstream will be guard.guard_upstream's value must be one of the upstream name above defined.
+#This directive can be placed in location blocks.If there is no the directive in a location,then the,then the
+#guard module is disabled,and the other directivs of the guard module were ignored for locations.
+guard_upstream backend80;
+
+#Specifing one of  SNMP group which defined in snmp block for the upstream which specified by guard_upstream
+snmp_group group_name;
+
+#This directive value can be and/or.If the directive value is or,then the gruard consider as a server is
+#unhealthy,when the value one of the items within a snmp group defined for the server is more(less)
+#the specified value.Otherwise,the gruard consider as a server is unhealthy,when the values of ALL the items
+# within a snmp group defined for the server is is more(less) the specified value.
+guard_mode or;
+
+#This directive value can be a URI or URL.Guard will redirect a request to the URI or URL,when all backend
+#servers are unhealthy.This directive is optional.
+action_url /test.html;
+
+#Guard will building a response message with this directive value.And guard will send the reponse message to
+#the client when all the backend servers are unhealthy and action_url value is null.In the other word,if the
+#value of action_url and action_msg are not NULL, then guard will redirect a request to the URI or URL first,
+#and ignoring the action_msg.
+action_msg "test message";
+
+Note
+-------
+conf/nginx.conf is a sample configuration file for nginx with nginx snmp addons
+conf/snmp.conf is a sample configuration file for SNMP parameters configuration
+
+Homepage
+--------
+
+    http://www.bzhy.com
+
+Bug reports to
+--------------
+
+    <net_use@bzhy.com>
+
+
+Wayne Wang <net_use@bzhy.com>
+

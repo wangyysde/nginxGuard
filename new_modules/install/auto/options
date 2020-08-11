@@ -1,0 +1,12 @@
+#Please copy the following lines into nginx_resource_root/auto/options,
+and put them at the below of the line "help=no"
+
+#Initate variables for new modules
+ADMIN=YES
+
+#Put the following messages at the below of the line "--without-poll_module)           EVENT_POLL=NONE " in for block
+        --with-admin_module)             ADMIN=YES                  ;;    
+        --without-admin_module)          ADMIN=NO                   ;;
+#Put the following messages at the below of the line "--without-poll_module              disable poll module" in "if [ $help = yes ]" block
+--with-admin_module                 enable admin module
+--without-admin_module              disable admin module

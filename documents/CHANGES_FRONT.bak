@@ -1,0 +1,11 @@
+
+
+Nov 24  Added table new_applications for changing application based on GLOBAL setting not host,template 
+		CREATE TABLE `new_applications` (                                              
+      `applicationid` bigint(20) unsigned NOT NULL,                                
+      `name` varchar(255) NOT NULL DEFAULT '',                                     
+      `description` varchar(255) DEFAULT NULL,                                     
+      `isdeled` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'normal is 0,deleted is 1',
+      PRIMARY KEY (`applicationid`),                                               
+      UNIQUE KEY `applications_1` (`name`)                                         
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8                                           

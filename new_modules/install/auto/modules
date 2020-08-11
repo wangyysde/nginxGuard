@@ -1,0 +1,40 @@
+#Please copy the following lines into nginx_resource_root/auto/modules,
+#Put the following message at top of the line  HTTP_MODULES=
+ADMIN_MODULES=
+ADMIN_DEPS=
+ADMIN_INCS=
+
+ngx_module_type=ADMIN
+if :; then
+    ngx_module_name="admin_core_module"
+    ngx_module_incs="src/admin \
+                        src/http src/http/modules"
+    ngx_module_deps="src/admin/admin.h \
+                        src/http/ngx_http.h \
+                        src/http/ngx_http_request.h \
+                        src/http/ngx_http_config.h \
+                        src/http/ngx_http_core_module.h \
+                        src/http/ngx_http_cache.h \
+                        src/http/ngx_http_variables.h \
+                        src/http/ngx_http_script.h \
+                        src/http/ngx_http_upstream.h \
+                        src/http/ngx_http_upstream_round_robin.h"
+    ngx_module_srcs="src/admin/admin.c"
+    ngx_module_libs=
+    ngx_module_link=YES
+
+    . auto/module
+fi
+
+#Put the following message at bellow of the block
+#if [ $HTTP = YES ]; then
+#    modules="$modules $HTTP_MODULES $HTTP_FILTER_MODULES \
+#             $HTTP_AUX_FILTER_MODULES $HTTP_INIT_FILTER_MODULES"
+#
+#    NGX_ADDON_DEPS="$NGX_ADDON_DEPS \$(HTTP_DEPS)"
+#fi
+if [ $ADMIN = YES ]; then
+    modules="$modules $ADMIN_MODULES"
+
+    NGX_ADDON_DEPS="$NGX_ADDON_DEPS \$(ADMIN_DEPS)"
+fi

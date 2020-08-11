@@ -1,0 +1,54 @@
+typedef struct {
+    ngx_uint_t                 cpu_load;
+    ngx_uint_t                 mem_used;
+    ngx_uint_t                 mem_total;
+    ngx_uint_t                 mem_sscontext;
+    ngx_uint_t                 interface_last_byes;
+    ngx_uint_t                 interface_current_byes;
+    ngx_uint_t                 disk_io_rate;
+} ngx_http_guard_snmp_data_t;
+
+typedef struct {
+    ngx_uint_t                  snmp_port;
+    ngx_uint_t                  snmp_ver;
+    ngx_uint_t                  snmpget_timeout;
+    ngx_str_t                   snmp_community; 
+    ngx_uint_t                  get_interval;
+    ngx_str_t                   cpu_oid;
+    ngx_str_t                   memused_oid;
+    ngx_str_t                   memtotal_oid;
+    ngx_str_t                   memssc_oid; 
+    ngx_str_t                   nicthroughput_oid; 
+    ngx_str_t                   iorate_oid;
+} ngx_http_guard_snmp_para_t;
+
+
+typedef struct {
+    ngx_str_t                   server_addr;
+    ngx_http_guard_snmp_data_t  snmp_data;
+} ngx_http_guard_server_snmp_data_t;
+
+typedef struct {
+    ngx_str_t                   upstream_name;
+    ngx_array_t                 servers_snmp_data;
+} ngx_http_guard_servers_t;
+
+typedef struct {
+    ngx_array_t                 guard_upstream;
+    ngx_http_guard_snmp_para_t    snmp_paras;
+} ngx_http_guard_main_conf_t;
+
+typedef struct {
+    ngx_connection_t           *connection;
+    ngx_msec_t                 timeout;
+    size_t                     bufsize;
+    ngx_str_t                  upstream_name;
+    ngx_str_t                  server_addr;
+    ngx_str_t                  obj_name;
+    snmp_para_t                *snmp_paras;
+    ngx_peer_connection_t      *pc;
+    char                       *recv_buf; 
+    ngx_pool_t                 *pool;
+    ngx_log_t                  *log;
+    snmp_oct_t                 *snmp_pdu;
+} ngx_http_guard_connect_session_t;

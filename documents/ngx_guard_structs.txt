@@ -1,0 +1,22 @@
+typedef struct {
+    ngx_uint_t                 cpu_load;
+    ngx_uint_t                 mem_used;
+    ngx_uint_t                 mem_total;
+    ngx_uint_t                 mem_sscontext;
+    ngx_uint_t                 interface_last_byes;
+    ngx_uint_t                 interface_current_byes;
+    ngx_uint_t                 disk_io_rate;
+} ngx_http_guard_snmp_data_t;
+
+typedef struct {
+    ngx_str_t                   server_addr;
+    ngx_http_guard_snmp_data_t  snmp_data;
+} ngx_http_guard_server_snmp_data_t;
+
+typedef struct {
+    ngx_str_t                   upstream_name;
+    ngx_array_t                 servers_snmp_data;
+} ngx_http_guard_servers_t;
+typedef struct {
+    ngx_array_t                 guard_upstream;
+} ngx_http_guard_main_conf_t;
